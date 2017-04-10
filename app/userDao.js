@@ -1,10 +1,10 @@
 ﻿module.exports = function() {
 	var mysql = require('mysql');
 	
-	var userEntry = function(account,nickName,sex){
+	var userEntry = function(account,nickname,signature){
 		this.account = account;
-		this.nickName = nickName;
-		this.sex = sex;
+		this.nickname = nickname;
+		this.signature = signature;
 	}
 	
 	function createConnection(){
@@ -25,7 +25,7 @@
 				if(err) throw err;
 				var userList=[];
 				rows.forEach(function(item,index){
-					var user= new userEntry(item.account,item.nickname,item.sex);
+					var user= new userEntry(item.account,item.nickname,item.signature);
 					userList.push(user);
 				});
 				callback(userList);
@@ -33,9 +33,9 @@
 			connection.end();
 		},
 		
-		insertUser:function(account,password,nickName,sex,callback){
+		insertUser:function(account,password,nickname,signature,callback){
 			var conn = createConnection();
-			var param = [account,password,nickName,sex];
+			var param = [account,password,nickname,signature];
 			conn.query("insert into user values(?,?,?,?)",param,function(err,rows,fields){
 				if(err) throw err;
 				callback(true);
@@ -52,28 +52,28 @@
 			});
 			conn.end();
 		},
-		updateUserNickName:function(account,nickName,callback){
+		updateUserNickName:function(account,nickname,callback){
 			var conn = createConnection();
-			var param = [nickName,account];
+			var param = [nickname,account];
 			conn.query("update user set nickname = ? where account = ?",param,function(err,rows,fields){
 				if(err) throw err;
 				callback();
 			});
 			conn.end();
 		},
-		updateUserSex:function(account,sex,callback){
+		updateUserSex:function(account,signature,callback){
 			var conn = createConnection();
-			var param = [sex,account];
-			conn.query("update user set sex = ? where account = ?",param,function(err,rows,fields){
+			var param = [signature,account];
+			conn.query("update user set signature = ? where account = ?",param,function(err,rows,fields){
 				if(err) throw err;
 				callback();
 			});
 			conn.end();
 		},
-		updateUser:function(account,nickName,sex,callback){
+		updateUser:function(account,nickname,signature,callback){
 			var conn = createConnection();
-			var param = [nickName,sex,account];
-			conn.query("update user set nickname=?,sex = ? where account = ?",param,function(err,rows,fields){
+			var param = [nickname,signature,account];
+			conn.query("update user set nickname=?,signature = ? where account = ?",param,function(err,rows,fields){
 				if(err) throw err;
 				callback();
 			});
@@ -81,13 +81,13 @@
 		},
 		login:function(account,password,callback){
 			var conn = createConnection();
-			var param = [account,password,account];
+			var param = [account,password];
 			conn.query("select * from user where account = ? and password =?",param,function(err,rows,fields){
 				if(err) throw err;
-				if(rows.length == 1){
-					callback(true);
+				if(rows.length != 0){
+					callback(true,rows[0].account,rows[0].nickname,rows[0].signature);
 				}else{
-					callback(false);
+					callback(false,'','','','');
 				}
 			});
 			conn.end();
