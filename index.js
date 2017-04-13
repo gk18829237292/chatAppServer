@@ -13,6 +13,7 @@ io.on('connection', function(socket){
 	socket.on('register',function(account,password,nickname,signature){
 		db.insertUser(account,password,nickname,signature,function(result){
 			socket.emit('register_result',result);
+			socket.broadcast.emit('newUser',account,nickname,signature,'');
 		});
 	});
 
@@ -33,7 +34,7 @@ io.on('connection', function(socket){
 	
 	socket.on('getAllUser',function(){
 		db.getAllUser(function(userList){
-			socket.emit('getAllUser_result',userList);
+			socket.emit('getAllUser_result',userList,onlineUser);
 		});
 	});
 	
@@ -50,9 +51,17 @@ io.on('connection', function(socket){
 	socket.on('updateUser',function(account,nickname,signature,image){
 		db.updateUser(account,nickname,signature,image,function(result){
 			socket.emit('updateUser_result',result);
+			if(result){
+				socket.broadcast.emit('userUpdate_result',account,nickname,signature,image);
+			}
+
 		});
 	});
-	
+	socket.on('logout',function(account){
+		console.log('-- ' + account + ' logout');
+		socket.broadcast.emit('logout_client',account);
+	});
+
 	socket.on('getToken',function(bucket,key){
 		qn.getToken(bucket,key,function(token){
 			socket.emit('token_result',token);
