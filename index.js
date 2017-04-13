@@ -3,7 +3,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 var db = require('./app/userDao.js')();
-
+var qn = require('./app/qiniu.js')();
 var onlineUser=[];
 var userList={};
 
@@ -17,7 +17,7 @@ io.on('connection', function(socket){
 	});
 
 	socket.on('login',function(account,password){
-		db.login(account,password,function(result,account,nickname,signature){
+		db.login(account,password,function(result,account,nickname,signature,image){
 			console.log('-- ' + account + ' ' +  password  + '-- try to login');
 			if(result){
 				console.log('-- ' + account + ' login success');
@@ -27,7 +27,7 @@ io.on('connection', function(socket){
 			}else{
 				console.log('-- ' + account + ' login failed');
 			}
-			socket.emit('login_result',result,account,nickname,signature);
+			socket.emit('login_result',result,account,nickname,signature,image);
 		});
 	});
 	
@@ -47,7 +47,17 @@ io.on('connection', function(socket){
 		delete(userList[socket.id]);
 	});
 	
+	socket.on('updateUser',function(account,nickname,signature,image){
+		db.updateUser(account,nickname,signature,image,function(result){
+			socket.emit('updateUser_result',result);
+		});
+	});
 	
+	socket.on('getToken',function(bucket,key){
+		qn.getToken(bucket,key,function(token){
+			socket.emit('token_result',token);
+		});
+	});
 });
 
 http.listen(port, function(){
