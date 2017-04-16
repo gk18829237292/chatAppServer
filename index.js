@@ -4,7 +4,7 @@ var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 var db = require('./app/userDao.js')();
 var qn = require('./app/qiniu.js')();
-var onlineUser=[];
+var onlineUser={};
 var userList={};
 var userList1={};
 
@@ -23,7 +23,7 @@ io.on('connection', function(socket){
 			console.log('-- ' + account + ' ' +  password  + '-- try to login');
 			if(result){
 				console.log('-- ' + socket.id + ' == ' + account + ' login success');
-				onlineUser.push(account);
+				onlineUser[account] = 'on';
 				userList[socket.id] = account;
 				userList1[account]=socket.id;
 				socket.broadcast.emit('login_client',account);
@@ -37,6 +37,7 @@ io.on('connection', function(socket){
 	socket.on('getAllUser',function(){
 		db.getAllUser(function(userList){
 			console.log('onLineUser : ' + onlineUser);
+			console.log('userList : ' + userList);
 			socket.emit('getAllUser_result',userList,onlineUser);
 		});
 	});
