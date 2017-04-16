@@ -120,6 +120,15 @@ io.on('connection', function(socket){
 		}
 		otherSocket.emit('ice',src,des,sdpMid,index,sdp);
 	});
+	
+	socket.on('hangup',function(src,des){
+		console.log('hangup' + ' ' + src +'->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('hangup',src,des);
+	});
 });
 
 http.listen(port, function(){
