@@ -6,6 +6,7 @@ var db = require('./app/userDao.js')();
 var qn = require('./app/qiniu.js')();
 var onlineUser=[];
 var userList={};
+var userList1={};
 
 io.on('connection', function(socket){
 	console.log('-- ' + socket.id + ' joined --');
@@ -21,9 +22,10 @@ io.on('connection', function(socket){
 		db.login(account,password,function(result,account,nickname,signature,image){
 			console.log('-- ' + account + ' ' +  password  + '-- try to login');
 			if(result){
-				console.log('-- ' + account + ' login success');
+				console.log('-- ' + socket.id + ' == ' + account + ' login success');
 				onlineUser.push(account);
 				userList[socket.id] = account;
+				userList1[account]=socket.id;
 				socket.broadcast.emit('login_client',account);
 			}else{
 				console.log('-- ' + account + ' login failed');
@@ -34,6 +36,7 @@ io.on('connection', function(socket){
 	
 	socket.on('getAllUser',function(){
 		db.getAllUser(function(userList){
+			console.log('onLineUser : ' + onlineUser);
 			socket.emit('getAllUser_result',userList,onlineUser);
 		});
 	});
@@ -44,7 +47,10 @@ io.on('connection', function(socket){
 	
 	socket.on('disconnect',function(){
 		console.log('-- ' + userList[socket.id] + ' left');
-		socket.broadcast.emit('logout_client',userList[socket.id]);
+		var account = userList[socket.id];
+		socket.broadcast.emit('logout_client',account);
+		delete(onlineUser[account]);
+		delete(userList1[account]);
 		delete(userList[socket.id]);
 	});
 	
@@ -59,6 +65,7 @@ io.on('connection', function(socket){
 	});
 	socket.on('logout',function(account){
 		console.log('-- ' + account + ' logout');
+		delete(onlineUser[account]);
 		socket.broadcast.emit('logout_client',account);
 	});
 
@@ -66,6 +73,51 @@ io.on('connection', function(socket){
 		qn.getToken(bucket,key,function(token){
 			socket.emit('token_result',token);
 		});
+	});
+	
+	socket.on('init',function(src,des){
+		console.log('init' + ' ' + src + '->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('init',src,des);
+	});
+	
+	socket.on('offer',function(src,des,sdp){
+		console.log('offer' + ' ' + src +'->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('offer',src,des,sdp);
+	});
+	
+	socket.on('answer',function(src,des,sdp){
+		console.log('answer' + ' ' + src +'->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('answer',src,des,sdp);
+	});
+	
+	socket.on('reject',function(src,des){
+		console.log('reject' + ' ' + src +'->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('reject',src,des);
+	});
+	
+	socket.on('ice',function(src,des,sdpMid,index,sdp){
+		console.log('ice ' + ' ' + src + '->' + des);
+		var otherSocket = io.sockets.connected[userList1[des]];
+		if (!otherSocket) {
+			return;
+		}
+		otherSocket.emit('ice',src,des,sdpMid,index,sdp);
 	});
 });
 
