@@ -18,18 +18,21 @@ io.on('connection', function(socket){
 		});
 	});
 
+	//处理用户登录请求
 	socket.on('login',function(account,password){
+		//db 为自己写的操作数据库的工具类
 		db.login(account,password,function(result,account,nickname,signature,image){
 			console.log('-- ' + account + ' ' +  password  + '-- try to login');
-			if(result){
+			if(result){//校验成功，在服务器中更新该用户的在线状态
 				console.log('-- ' + socket.id + ' == ' + account + ' login success');
 				onlineUser[account] = 'on';
 				userList[socket.id] = account;
 				userList1[account]=socket.id;
-				socket.broadcast.emit('login_client',account);
-			}else{
+				socket.broadcast.emit('login_client',account);//通知其他用户该用户上线消息
+			}else{//校验失败
 				console.log('-- ' + account + ' login failed');
 			}
+			//返回登录结果
 			socket.emit('login_result',result,account,nickname,signature,image);
 		});
 	});
